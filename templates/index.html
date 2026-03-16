@@ -369,7 +369,131 @@
       min-height: 0;
     }
 
-    /* Toast */
+    /* ── MODAL ────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(10,12,30,.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,.3);
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes modalIn {
+      from { transform: scale(.88) translateY(20px); opacity: 0; }
+      to   { transform: scale(1)   translateY(0);    opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .modal-title {
+      font-size: 16px; font-weight: 800; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-title .icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--bg); border: none; cursor: pointer;
+      font-size: 16px; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    .modal-close:hover { background: #fde8ec; color: var(--danger); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      letter-spacing: .6px; text-transform: uppercase;
+    }
+    .form-group label .req { color: var(--danger); margin-left: 2px; }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 13px;
+      color: var(--text);
+      background: #fafbff;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.12);
+      background: #fff;
+    }
+    .form-group input.error,
+    .form-group select.error { border-color: var(--danger); }
+
+    .form-group textarea { resize: none; height: 70px; }
+
+    .type-btns {
+      display: flex; gap: 8px;
+    }
+    .type-btn {
+      flex: 1; padding: 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; background: #fafbff;
+      color: var(--muted); transition: all .15s;
+      text-align: center;
+    }
+    .type-btn.active-expense { border-color: var(--danger); background: #fde8ec; color: var(--danger); }
+    .type-btn.active-income  { border-color: var(--success); background: #e0faf4; color: var(--success); }
+
+    .modal-footer {
+      display: flex; gap: 10px; margin-top: 22px;
+    }
+    .btn-cancel {
+      flex: 1; padding: 10px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-cancel:hover { background: var(--bg); }
+    .btn-save {
+      flex: 2; padding: 10px;
+      border: none; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #9b55ff);
+      color: white; font-size: 13px; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 14px rgba(108,99,255,.35);
+      transition: opacity .15s, transform .15s;
+    }
+    .btn-save:hover { opacity: .9; transform: translateY(-1px); }
+
+    /* ── TOAST ────────────────────────────────────── */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
       padding: 12px 20px;
@@ -431,6 +555,7 @@
 
     <!-- Buttons -->
     <div class="sidebar-btns">
+      <button class="btn btn-add" onclick="openModal()" style="background:linear-gradient(135deg,#6c63ff,#00d4aa);box-shadow:0 3px 10px rgba(108,99,255,.4)">➕ Add Record</button>
       <button class="btn btn-reset" onclick="resetAll()">↺ Reset Filters</button>
       <button class="btn btn-import" onclick="document.getElementById('excel-input').click()">📤 Import Excel</button>
       <button class="btn btn-delete" onclick="deleteRecord()">🗑️ Delete Record</button>
@@ -509,6 +634,69 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- ADD RECORD MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <div class="icon">➕</div>
+        Add New Record
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="form-grid">
+
+      <!-- Time -->
+      <div class="form-group full">
+        <label>Time <span class="req">*</span></label>
+        <input type="text" id="f-time" placeholder="Select date & time" readonly/>
+      </div>
+
+      <!-- Type -->
+      <div class="form-group full">
+        <label>Type <span class="req">*</span></label>
+        <div class="type-btns">
+          <div class="type-btn" id="btn-expense" onclick="setType('Expense')">💸 Expense</div>
+          <div class="type-btn" id="btn-income"  onclick="setType('Income')">💰 Income</div>
+        </div>
+        <input type="hidden" id="f-type"/>
+      </div>
+
+      <!-- Amount -->
+      <div class="form-group">
+        <label>Amount <span class="req">*</span></label>
+        <input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label>Category <span class="req">*</span></label>
+        <input type="text" id="f-category" placeholder="e.g. Food" list="cat-suggestions"/>
+        <datalist id="cat-suggestions"></datalist>
+      </div>
+
+      <!-- Account -->
+      <div class="form-group">
+        <label>Account <span class="req">*</span></label>
+        <input type="text" id="f-account" placeholder="e.g. Cash, Bank"/>
+      </div>
+
+      <!-- Note -->
+      <div class="form-group">
+        <label>Note</label>
+        <input type="text" id="f-note" placeholder="Optional note"/>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save"   onclick="saveRecord()">✓ Save Record</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -760,6 +948,109 @@
 
   // ── CATEGORY LIST CHANGE ──────────────────────
   document.getElementById("category-list").addEventListener("change", searchRecords);
+
+  // ── MODAL ─────────────────────────────────────
+  let fpTime;
+  let selectedType = "";
+
+  function openModal() {
+    document.getElementById("modal-overlay").classList.add("open");
+    // Init flatpickr for time field (datetime)
+    if (!fpTime) {
+      fpTime = flatpickr("#f-time", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        defaultDate: new Date(),
+        disableMobile: true,
+        time_24hr: true
+      });
+    } else {
+      fpTime.setDate(new Date(), true);
+    }
+    // Pre-fill category suggestions from existing data
+    const dl = document.getElementById("cat-suggestions");
+    dl.innerHTML = "";
+    const existing = Array.from(document.getElementById("category-list").options).map(o => o.value);
+    existing.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      dl.appendChild(opt);
+    });
+    // Reset form
+    ["f-amount","f-category","f-account","f-note"].forEach(id => {
+      document.getElementById(id).value = "";
+      document.getElementById(id).classList.remove("error");
+    });
+    document.getElementById("f-time").classList.remove("error");
+    document.getElementById("f-type").value = "";
+    setType("");
+  }
+
+  function closeModal() {
+    document.getElementById("modal-overlay").classList.remove("open");
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById("modal-overlay")) closeModal();
+  }
+
+  function setType(val) {
+    selectedType = val;
+    document.getElementById("f-type").value = val;
+    document.getElementById("btn-expense").className =
+      "type-btn" + (val === "Expense" ? " active-expense" : "");
+    document.getElementById("btn-income").className =
+      "type-btn" + (val === "Income"  ? " active-income"  : "");
+  }
+
+  async function saveRecord() {
+    // Validate
+    let valid = true;
+    const fields = [
+      { id: "f-time",     val: document.getElementById("f-time").value.trim() },
+      { id: "f-amount",   val: document.getElementById("f-amount").value.trim() },
+      { id: "f-category", val: document.getElementById("f-category").value.trim() },
+      { id: "f-account",  val: document.getElementById("f-account").value.trim() },
+    ];
+    fields.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (!f.val) { el.classList.add("error"); valid = false; }
+      else el.classList.remove("error");
+    });
+    if (!selectedType) {
+      showToast("Please select a Type (Expense or Income).", "error");
+      valid = false;
+    }
+    if (!valid) { showToast("Please fill all required fields.", "error"); return; }
+
+    const payload = {
+      time:     document.getElementById("f-time").value.trim(),
+      type:     selectedType,
+      amount:   parseFloat(document.getElementById("f-amount").value),
+      category: document.getElementById("f-category").value.trim(),
+      account:  document.getElementById("f-account").value.trim(),
+      note:     document.getElementById("f-note").value.trim()
+    };
+
+    const res  = await fetch("/api/record", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast("✅ Record added successfully!", "success");
+      closeModal();
+      await loadFilters();
+      await searchRecords();
+    } else {
+      showToast("❌ " + (data.error || "Failed to save"), "error");
+    }
+  }
+
+  // Close modal on Escape key
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
   init();
 </script>

@@ -88,6 +88,27 @@ def get_filters():
     conn.close()
     return jsonify({"categories": categories, "dates": dates})
 
+@app.route("/api/record", methods=["POST"])
+def add_record():
+    data = request.json
+    required = ["time", "type", "amount", "category", "account", "note"]
+    missing = [f for f in required if not str(data.get(f, "")).strip()]
+    if missing:
+        return jsonify({"success": False, "error": f"Missing fields: {', '.join(missing)}"}), 400
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO expenses (time, type, amount, category, account, note)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (data["time"], data["type"], float(data["amount"]),
+              data["category"], data["account"], data["note"]))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route("/api/record", methods=["DELETE"])
 def delete_record():
     data = request.json
