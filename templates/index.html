@@ -1,295 +1,559 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Expense Manager</title>
+
+  <!-- Flatpickr Calendar -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Flatpickr -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:   #1a1f3c;
+      --accent:    #6c63ff;
+      --accent2:   #00d4aa;
+      --danger:    #ff4d6d;
+      --warning:   #ffa94d;
+      --success:   #40c057;
+      --bg:        #f0f2fa;
+      --card-bg:   #ffffff;
+      --text:      #2d3a4a;
+      --muted:     #8899a8;
+      --border:    #e2e8f0;
+      --sidebar-w: 240px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
+    /* ── HEADER ───────────────────────────────────── */
     header {
-      background: #2c3e50;
+      background: linear-gradient(135deg, #1a1f3c 0%, #2d3561 60%, #6c63ff 100%);
       color: white;
-      padding: 12px 20px;
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: 1px;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(108,99,255,.35);
+      flex-shrink: 0;
     }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+    .header-date { font-size: 12px; color: rgba(255,255,255,.65); }
 
-    .main {
+    /* ── LAYOUT ───────────────────────────────────── */
+    .layout {
       display: flex;
       flex: 1;
       overflow: hidden;
-      padding: 12px;
-      gap: 12px;
     }
 
-    /* ===== LEFT PANEL ===== */
-    .left-panel {
-      width: 220px;
+    /* ── SIDEBAR ──────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
       flex-shrink: 0;
+      background: var(--primary);
       display: flex;
       flex-direction: column;
+      padding: 14px 12px;
       gap: 10px;
+      overflow-y: auto;
     }
 
     .total-card {
-      background: #2c3e50;
-      border-radius: 8px;
-      padding: 12px;
+      background: linear-gradient(135deg, #6c63ff, #00d4aa);
+      border-radius: 14px;
+      padding: 16px 14px;
       text-align: center;
-      border: 3px solid #1a252f;
+      box-shadow: 0 4px 16px rgba(108,99,255,.4);
     }
-    .total-card .label { color: #ecf0f1; font-size: 13px; font-weight: bold; }
-    .total-card .value { color: #1abc9c; font-size: 22px; font-weight: bold; margin-top: 4px; }
+    .total-card .lbl { color: rgba(255,255,255,.85); font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+    .total-card .val { color: #fff; font-size: 28px; font-weight: 800; margin-top: 4px; }
+    .total-card .sub { color: rgba(255,255,255,.7); font-size: 11px; margin-top: 2px; }
 
-    .filter-section {
-      background: white;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .sidebar-section {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 12px 10px;
     }
-
-    .filter-section h3 {
-      font-size: 14px;
-      color: #2c3e50;
-      border-bottom: 1px solid #eee;
+    .sidebar-section h4 {
+      color: rgba(255,255,255,.5);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
       padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
     }
 
-    .filter-section label {
-      font-size: 12px;
-      font-weight: bold;
-      color: #555;
+    .filter-label {
+      color: rgba(255,255,255,.7);
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
+    .filter-label span { font-size: 13px; }
 
-    .filter-section select {
+    .date-input-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .date-input-wrap input {
       width: 100%;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 7px 30px 7px 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      color: #fff;
       font-size: 12px;
-      background: white;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .2s;
     }
+    .date-input-wrap input:focus,
+    .date-input-wrap input:hover { border-color: var(--accent); }
+    .date-input-wrap input::placeholder { color: rgba(255,255,255,.35); }
+    .date-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      color: rgba(255,255,255,.4); cursor: pointer; font-size: 14px;
+      line-height: 1; transition: color .2s;
+    }
+    .date-clear:hover { color: var(--danger); }
 
+    /* Custom flatpickr dark theme overrides */
+    .flatpickr-calendar {
+      background: #1e2547 !important;
+      border: 1px solid rgba(108,99,255,.4) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4) !important;
+      border-radius: 12px !important;
+    }
+    .flatpickr-month, .flatpickr-weekdays, .flatpickr-day { color: #fff !important; }
+    .flatpickr-day:hover { background: rgba(108,99,255,.4) !important; }
+    .flatpickr-day.selected { background: var(--accent) !important; border-color: var(--accent) !important; }
+    .flatpickr-prev-month, .flatpickr-next-month { color: #fff !important; fill: #fff !important; }
+    .flatpickr-current-month .flatpickr-monthDropdown-months { color: #fff; background: transparent; }
+    .numInput.cur-year { color: #fff !important; }
+    .flatpickr-weekday { color: rgba(255,255,255,.5) !important; }
+    .flatpickr-day.flatpickr-disabled { color: rgba(255,255,255,.2) !important; }
+    .flatpickr-day.today { border-color: var(--accent2) !important; }
+    span.flatpickr-day.inRange { background: rgba(108,99,255,.25) !important; box-shadow: none !important; }
+
+    /* Category multi-select */
     #category-list {
       width: 100%;
-      height: 140px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 12px;
-      padding: 2px;
+      height: 150px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      color: rgba(255,255,255,.85);
+      font-size: 11.5px;
+      padding: 4px;
+      outline: none;
     }
+    #category-list option { padding: 4px 6px; border-radius: 4px; }
+    #category-list option:checked { background: var(--accent); color: #fff; }
+
+    .sidebar-btns { display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
 
     .btn {
-      width: 100%;
-      padding: 8px;
-      font-size: 13px;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      color: white;
-      transition: opacity 0.2s;
+      width: 100%; padding: 9px 12px;
+      font-size: 12px; font-weight: 700;
+      border: none; border-radius: 9px;
+      cursor: pointer; color: white;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      letter-spacing: .3px;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-blue  { background: #2980b9; }
-    .btn-green { background: #27ae60; }
-    .btn-red   { background: #e74c3c; }
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .btn:active { transform: translateY(0); }
+    .btn-reset  { background: linear-gradient(135deg, #2980b9, #3498db); box-shadow: 0 3px 10px rgba(52,152,219,.35); }
+    .btn-import { background: linear-gradient(135deg, #27ae60, #2ecc71); box-shadow: 0 3px 10px rgba(46,204,113,.35); }
+    .btn-delete { background: linear-gradient(135deg, #c0392b, #e74c3c); box-shadow: 0 3px 10px rgba(231,76,60,.35); }
+    #excel-input { display: none; }
 
-    /* ===== RIGHT PANEL ===== */
-    .right-panel {
+    /* ── MAIN CONTENT ─────────────────────────────── */
+    .content {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      padding: 14px;
+      gap: 12px;
       overflow: hidden;
     }
 
-    /* Category Cards */
+    /* Stat cards row */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid var(--border);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.1); }
+
+    .stat-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .stat-info .stat-val {
+      font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1;
+    }
+    .stat-info .stat-lbl { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    /* Category cards */
+    .cat-cards-wrap {
+      flex-shrink: 0;
+      max-height: 120px;
+      overflow-y: auto;
+    }
     .cards-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
     }
-
     .cat-card {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 5px 10px;
-      border-radius: 6px;
-      min-width: 160px;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 20px;
       color: white;
-      font-size: 13px;
-      font-weight: bold;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      transition: transform .15s, box-shadow .15s;
+      cursor: default;
     }
-    .cat-card span:last-child { margin-left: 8px; }
+    .cat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+    .cat-card .cat-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.5); flex-shrink: 0; }
+    .cat-card .cat-amt { opacity: .9; }
 
-    /* Table */
-    .table-wrapper {
+    /* Bottom section: table + chart */
+    .bottom-section {
+      display: flex;
       flex: 1;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      gap: 12px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .table-wrap {
+      flex: 1;
+      background: var(--card-bg);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid var(--border);
       overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .record-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 12.5px;
     }
-
     thead th {
-      background: #2c3e50;
-      color: white;
-      padding: 9px 10px;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      border: 1px solid #1a252f;
+      background: #f8f9ff;
+      color: var(--muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 9px 12px;
+      text-align: left;
+      position: sticky; top: 0; z-index: 1;
+      border-bottom: 2px solid var(--border);
     }
-
-    tbody tr { cursor: pointer; }
-    tbody tr:nth-child(even) { background: #f9f9f9; }
-    tbody tr:hover { background: #d6eaf8; }
-    tbody tr.selected { background: #347083 !important; color: white; }
-
+    tbody tr { cursor: pointer; transition: background .1s; }
+    tbody tr:hover { background: #f0f2ff; }
+    tbody tr.selected { background: linear-gradient(90deg, rgba(108,99,255,.12), rgba(108,99,255,.05)) !important; }
+    tbody tr.selected td { color: var(--accent); font-weight: 600; }
     tbody td {
-      padding: 7px 10px;
-      text-align: center;
-      border: 1px solid #e0e0e0;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .amt-positive { color: var(--success); font-weight: 700; }
+    .type-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .no-data { text-align: center; color: var(--muted); padding: 40px; font-style: italic; }
+
+    /* Chart section */
+    .chart-wrap {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--card-bg);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .chart-canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
     }
 
     /* Toast */
     #toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 10px 18px;
-      border-radius: 6px;
-      font-size: 13px;
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px; font-weight: 600;
       color: white;
-      display: none;
-      z-index: 999;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      display: none; z-index: 9999;
+      box-shadow: 0 6px 20px rgba(0,0,0,.25);
+      animation: slideIn .3s ease;
     }
-    #toast.success { background: #27ae60; }
-    #toast.error   { background: #e74c3c; }
-
-    /* File input hidden */
-    #excel-input { display: none; }
-
-    .no-data { text-align: center; color: #aaa; padding: 30px; font-style: italic; }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    #toast.success { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+    #toast.error   { background: linear-gradient(135deg, #c0392b, #e74c3c); }
   </style>
 </head>
 <body>
 
-<header>Expense Manager</header>
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="header-icon">💰</div>
+    <h1>Expense Manager</h1>
+  </div>
+  <div class="header-date" id="header-date"></div>
+</header>
 
-<div class="main">
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <!-- Total -->
     <div class="total-card">
-      <div class="label">Total Amount</div>
-      <div class="value" id="total-amount">0.00</div>
+      <div class="lbl">Total Spent</div>
+      <div class="val" id="total-amount">0.00</div>
+      <div class="sub" id="total-sub">0 records</div>
     </div>
 
-    <div class="filter-section">
-      <h3>Search By</h3>
+    <!-- Date Filters -->
+    <div class="sidebar-section">
+      <h4>🔍 Filter By</h4>
 
-      <label>From Date:</label>
-      <select id="date-from" onchange="searchRecords()">
-        <option value="All">All</option>
-      </select>
+      <div class="filter-label"><span>📅</span> From Date</div>
+      <div class="date-input-wrap">
+        <input type="text" id="date-from" placeholder="Select start date" readonly/>
+        <span class="date-clear" onclick="clearDate('date-from')" title="Clear">✕</span>
+      </div>
 
-      <label>To Date:</label>
-      <select id="date-to" onchange="searchRecords()">
-        <option value="All">All</option>
-      </select>
+      <div class="filter-label"><span>📅</span> To Date</div>
+      <div class="date-input-wrap">
+        <input type="text" id="date-to" placeholder="Select end date" readonly/>
+        <span class="date-clear" onclick="clearDate('date-to')" title="Clear">✕</span>
+      </div>
 
-      <label>Category:</label>
-      <select id="category-list" multiple onchange="searchRecords()"></select>
+      <div class="filter-label" style="margin-top:4px"><span>🏷️</span> Category</div>
+      <select id="category-list" multiple></select>
+      <div style="font-size:10px; color:rgba(255,255,255,.3); margin-top:4px; text-align:center">
+        Ctrl+click to select multiple
+      </div>
     </div>
 
-    <button class="btn btn-blue" onclick="resetAll()">Reset</button>
-    <button class="btn btn-green" onclick="document.getElementById('excel-input').click()">Import Excel</button>
-    <button class="btn btn-red" onclick="deleteRecord()">Delete Record</button>
-    <input type="file" id="excel-input" accept=".xlsx,.xls" onchange="importExcel(this)" />
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="cards-grid" id="cards-grid"></div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Category</th>
-            <th>Account</th>
-            <th>Note</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
+    <!-- Buttons -->
+    <div class="sidebar-btns">
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset Filters</button>
+      <button class="btn btn-import" onclick="document.getElementById('excel-input').click()">📤 Import Excel</button>
+      <button class="btn btn-delete" onclick="deleteRecord()">🗑️ Delete Record</button>
+      <input type="file" id="excel-input" accept=".xlsx,.xls" onchange="importExcel(this)"/>
     </div>
-  </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+    <!-- Stat Cards -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ede9ff">💸</div>
+        <div class="stat-info">
+          <div class="stat-val" id="s-total">0.00</div>
+          <div class="stat-lbl">Total Amount</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#e0faf4">📋</div>
+        <div class="stat-info">
+          <div class="stat-val" id="s-count">0</div>
+          <div class="stat-lbl">Records</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3e0">🏷️</div>
+        <div class="stat-info">
+          <div class="stat-val" id="s-cats">0</div>
+          <div class="stat-lbl">Categories</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fde8ec">🏆</div>
+        <div class="stat-info">
+          <div class="stat-val" id="s-top" style="font-size:14px">—</div>
+          <div class="stat-lbl">Top Category</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Cards -->
+    <div class="cat-cards-wrap">
+      <div class="cards-grid" id="cards-grid"></div>
+    </div>
+
+    <!-- Bottom: Table + Chart -->
+    <div class="bottom-section">
+      <div class="table-wrap">
+        <div class="table-header">
+          <span>Transaction Records</span>
+          <span class="record-badge" id="record-count-badge">0</span>
+        </div>
+        <div style="overflow:auto; flex:1;">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Account</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title">📊 By Category</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="cat-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  const COLORS = ["#3498db","#e67e22","#2ecc71","#9b59b6","#1abc9c","#e74c3c","#f1c40f","#34495e","#16a085","#c0392b"];
+  const COLORS = ["#6c63ff","#00d4aa","#ff6b6b","#ffa94d","#51cf66","#339af0","#f06595","#cc5de8","#20c997","#fd7e14",
+                  "#74c0fc","#a9e34b","#ff8787","#da77f2","#66d9e8"];
   let selectedRow = null;
   let allRows = [];
+  let chartInstance = null;
+  let fpFrom, fpTo;
 
-  // ---------------------------
-  // INIT
-  // ---------------------------
+  // Show today's date in header
+  document.getElementById("header-date").textContent =
+    new Date().toLocaleDateString("en-US", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+
+  // ── FLATPICKR INIT ────────────────────────────
+  fpFrom = flatpickr("#date-from", {
+    dateFormat: "Y-m-d",
+    disableMobile: true,
+    onChange: () => searchRecords()
+  });
+  fpTo = flatpickr("#date-to", {
+    dateFormat: "Y-m-d",
+    disableMobile: true,
+    onChange: () => searchRecords()
+  });
+
+  function clearDate(id) {
+    if (id === "date-from") fpFrom.clear();
+    else fpTo.clear();
+    searchRecords();
+  }
+
+  // ── INIT ─────────────────────────────────────
   async function init() {
     await loadFilters();
     await loadRecords();
   }
 
-  // ---------------------------
-  // LOAD FILTERS
-  // ---------------------------
+  // ── LOAD FILTERS (categories) ─────────────────
   async function loadFilters() {
-    const res = await fetch("/api/filters");
+    const res  = await fetch("/api/filters");
     const data = await res.json();
-
-    const dateFrom = document.getElementById("date-from");
-    const dateTo   = document.getElementById("date-to");
-    const catList  = document.getElementById("category-list");
-
-    // Dates
-    [dateFrom, dateTo].forEach(sel => {
-      sel.innerHTML = '<option value="All">All</option>';
-      data.dates.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d; opt.textContent = d;
-        sel.appendChild(opt);
-      });
-    });
-
-    // Categories
+    const catList = document.getElementById("category-list");
     catList.innerHTML = "";
     data.categories.forEach((cat, idx) => {
       const opt = document.createElement("option");
@@ -299,58 +563,70 @@
     });
   }
 
-  // ---------------------------
-  // LOAD RECORDS (no filter)
-  // ---------------------------
+  // ── LOAD ALL RECORDS ──────────────────────────
   async function loadRecords() {
     const res = await fetch("/api/records");
     allRows = await res.json();
-    renderTable(allRows);
-    updateTotal(allRows);
-    updateCards(allRows);
+    renderAll(allRows);
   }
 
-  // ---------------------------
-  // SEARCH RECORDS
-  // ---------------------------
+  // ── SEARCH ────────────────────────────────────
   async function searchRecords() {
-    const dateFrom   = document.getElementById("date-from").value;
-    const dateTo     = document.getElementById("date-to").value;
+    const dateFrom   = document.getElementById("date-from").value || "All";
+    const dateTo     = document.getElementById("date-to").value   || "All";
     const catOptions = document.getElementById("category-list").selectedOptions;
     const categories = Array.from(catOptions).map(o => o.value);
 
     const params = new URLSearchParams();
     params.set("date_from", dateFrom);
-    params.set("date_to", dateTo);
+    params.set("date_to",   dateTo);
     categories.forEach(c => params.append("categories", c));
 
-    const res = await fetch("/api/records?" + params.toString());
-    const rows = await res.json();
-    allRows = rows;
-    renderTable(rows);
-    updateTotal(rows);
-    updateCards(rows);
+    const res  = await fetch("/api/records?" + params.toString());
+    allRows = await res.json();
+    renderAll(allRows);
   }
 
-  // ---------------------------
-  // RENDER TABLE
-  // ---------------------------
+  // ── RENDER ALL ────────────────────────────────
+  function renderAll(rows) {
+    renderTable(rows);
+    updateStats(rows);
+    updateCards(rows);
+    updateChart(rows);
+  }
+
+  // ── RENDER TABLE ──────────────────────────────
   function renderTable(rows) {
     const tbody = document.getElementById("table-body");
     tbody.innerHTML = "";
     selectedRow = null;
+    document.getElementById("record-count-badge").textContent = rows.length;
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No records found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">📭 No records found</td></tr>';
       return;
     }
+
+    const typeColors = { debit:"#fde8ec", credit:"#e0faf4", expense:"#fde8ec", income:"#e0faf4" };
+    const typeFg     = { debit:"#c0392b", credit:"#27ae60", expense:"#c0392b", income:"#27ae60" };
 
     rows.forEach((row, idx) => {
       const tr = document.createElement("tr");
       tr.dataset.idx = idx;
-      ["time","type","amount","category","account","note"].forEach(key => {
+      const fields = ["time","type","amount","category","account","note"];
+      fields.forEach(key => {
         const td = document.createElement("td");
-        td.textContent = key === "amount" ? parseFloat(row[key]).toFixed(2) : (row[key] ?? "");
+        if (key === "amount") {
+          td.className = "amt-positive";
+          td.textContent = parseFloat(row[key]).toFixed(2);
+        } else if (key === "type") {
+          const t = (row[key] || "").toLowerCase();
+          const bg = typeColors[t] || "#f0f2ff";
+          const fg = typeFg[t]     || "#6c63ff";
+          td.innerHTML = `<span class="type-badge" style="background:${bg};color:${fg}">${row[key] || ""}</span>`;
+        } else {
+          td.textContent = row[key] ?? "";
+        }
         tr.appendChild(td);
       });
       tr.addEventListener("click", () => {
@@ -362,108 +638,128 @@
     });
   }
 
-  // ---------------------------
-  // UPDATE TOTAL
-  // ---------------------------
-  function updateTotal(rows) {
+  // ── UPDATE STATS ──────────────────────────────
+  function updateStats(rows) {
     const total = rows.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+    const cats  = new Set(rows.map(r => r.category)).size;
+    const totMap = {};
+    rows.forEach(r => { totMap[r.category] = (totMap[r.category] || 0) + parseFloat(r.amount || 0); });
+    const top = Object.entries(totMap).sort((a,b) => b[1]-a[1])[0];
+
     document.getElementById("total-amount").textContent = total.toFixed(2);
+    document.getElementById("total-sub").textContent    = `${rows.length} records`;
+    document.getElementById("s-total").textContent  = total.toFixed(2);
+    document.getElementById("s-count").textContent  = rows.length;
+    document.getElementById("s-cats").textContent   = cats;
+    document.getElementById("s-top").textContent    = top ? top[0] : "—";
+    document.getElementById("record-count-badge").textContent = rows.length;
   }
 
-  // ---------------------------
-  // UPDATE CARDS
-  // ---------------------------
+  // ── CATEGORY CARDS ────────────────────────────
   function updateCards(rows) {
     const totals = {};
-    rows.forEach(r => {
-      totals[r.category] = (totals[r.category] || 0) + parseFloat(r.amount || 0);
-    });
-
-    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 25);
+    rows.forEach(r => { totals[r.category] = (totals[r.category] || 0) + parseFloat(r.amount || 0); });
+    const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0, 25);
     const grid = document.getElementById("cards-grid");
     grid.innerHTML = "";
-
     sorted.forEach(([cat, amt], idx) => {
       const card = document.createElement("div");
       card.className = "cat-card";
-      card.style.background = COLORS[idx % COLORS.length];
-      card.innerHTML = `<span>${cat}</span><span>:</span><span>${amt.toFixed(2)}</span>`;
+      card.style.background = `linear-gradient(135deg, ${COLORS[idx % COLORS.length]}, ${COLORS[(idx+3) % COLORS.length]})`;
+      card.innerHTML = `<div class="cat-dot"></div><span>${cat}</span><span class="cat-amt">: ${amt.toFixed(2)}</span>`;
       grid.appendChild(card);
     });
   }
 
-  // ---------------------------
-  // RESET
-  // ---------------------------
+  // ── DONUT CHART ───────────────────────────────
+  function updateChart(rows) {
+    const totals = {};
+    rows.forEach(r => { totals[r.category] = (totals[r.category] || 0) + parseFloat(r.amount || 0); });
+    const sorted  = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0, 10);
+    const labels  = sorted.map(([c]) => c);
+    const values  = sorted.map(([,v]) => parseFloat(v.toFixed(2)));
+    const colors  = COLORS.slice(0, labels.length);
+
+    if (chartInstance) chartInstance.destroy();
+    if (!values.length) return;
+
+    chartInstance = new Chart(document.getElementById("cat-chart"), {
+      type: "doughnut",
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: "#fff", hoverOffset: 8 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: "65%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { font: { size: 10 }, color: "#8899a8", boxWidth: 10, padding: 8 }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)}`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ── RESET ─────────────────────────────────────
   async function resetAll() {
-    document.getElementById("date-from").value = "All";
-    document.getElementById("date-to").value   = "All";
-    const catList = document.getElementById("category-list");
-    Array.from(catList.options).forEach(o => o.selected = false);
+    fpFrom.clear(); fpTo.clear();
+    Array.from(document.getElementById("category-list").options).forEach(o => o.selected = false);
     await loadRecords();
   }
 
-  // ---------------------------
-  // DELETE RECORD
-  // ---------------------------
+  // ── DELETE ────────────────────────────────────
   async function deleteRecord() {
-    if (!selectedRow) {
-      showToast("No record selected.", "error");
-      return;
-    }
-
-    const idx = parseInt(selectedRow.dataset.idx);
-    const row = allRows[idx];
-
-    const res = await fetch("/api/record", {
+    if (!selectedRow) { showToast("No record selected.", "error"); return; }
+    const row = allRows[parseInt(selectedRow.dataset.idx)];
+    const res  = await fetch("/api/record", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(row)
     });
     const data = await res.json();
-
     if (data.success) {
       showToast("Record deleted successfully.", "success");
       await loadFilters();
       await searchRecords();
     } else {
-      showToast("Failed to delete: " + (data.error || "Unknown error"), "error");
+      showToast("Failed: " + (data.error || "Unknown error"), "error");
     }
   }
 
-  // ---------------------------
-  // IMPORT EXCEL
-  // ---------------------------
+  // ── IMPORT EXCEL ──────────────────────────────
   async function importExcel(input) {
     const file = input.files[0];
     if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("/api/import", { method: "POST", body: formData });
+    const fd = new FormData();
+    fd.append("file", file);
+    const res  = await fetch("/api/import", { method: "POST", body: fd });
     const data = await res.json();
     input.value = "";
-
     if (data.success) {
-      showToast(`Imported ${data.imported} records successfully!`, "success");
+      showToast(`✅ Imported ${data.imported} records!`, "success");
       await loadFilters();
       await loadRecords();
     } else {
-      showToast("Import failed: " + (data.error || "Unknown error"), "error");
+      showToast("❌ " + (data.error || "Import failed"), "error");
     }
   }
 
-  // ---------------------------
-  // TOAST NOTIFICATION
-  // ---------------------------
+  // ── TOAST ─────────────────────────────────────
   function showToast(msg, type = "success") {
-    const toast = document.getElementById("toast");
-    toast.textContent = msg;
-    toast.className = type;
-    toast.style.display = "block";
-    setTimeout(() => { toast.style.display = "none"; }, 3000);
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className   = type;
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3500);
   }
+
+  // ── CATEGORY LIST CHANGE ──────────────────────
+  document.getElementById("category-list").addEventListener("change", searchRecords);
 
   init();
 </script>
