@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 12px 20px;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    /* ===== LEFT PANEL ===== */
+    .left-panel {
+      width: 220px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .total-card {
+      background: #2c3e50;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 3px solid #1a252f;
+    }
+    .total-card .label { color: #ecf0f1; font-size: 13px; font-weight: bold; }
+    .total-card .value { color: #1abc9c; font-size: 22px; font-weight: bold; margin-top: 4px; }
+
+    .filter-section {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-section h3 {
+      font-size: 14px;
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+    }
+
+    .filter-section label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .filter-section select {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      background: white;
+    }
+
+    #category-list {
+      width: 100%;
+      height: 140px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      padding: 2px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-blue  { background: #2980b9; }
+    .btn-green { background: #27ae60; }
+    .btn-red   { background: #e74c3c; }
+
+    /* ===== RIGHT PANEL ===== */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    /* Category Cards */
+    .cards-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .cat-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 6px;
+      min-width: 160px;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .cat-card span:last-child { margin-left: 8px; }
+
+    /* Table */
+    .table-wrapper {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      background: #2c3e50;
+      color: white;
+      padding: 9px 10px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border: 1px solid #1a252f;
+    }
+
+    tbody tr { cursor: pointer; }
+    tbody tr:nth-child(even) { background: #f9f9f9; }
+    tbody tr:hover { background: #d6eaf8; }
+    tbody tr.selected { background: #347083 !important; color: white; }
+
+    tbody td {
+      padding: 7px 10px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: white;
+      display: none;
+      z-index: 999;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    #toast.success { background: #27ae60; }
+    #toast.error   { background: #e74c3c; }
+
+    /* File input hidden */
+    #excel-input { display: none; }
+
+    .no-data { text-align: center; color: #aaa; padding: 30px; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<header>Expense Manager</header>
+
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="total-card">
+      <div class="label">Total Amount</div>
+      <div class="value" id="total-amount">0.00</div>
+    </div>
+
+    <div class="filter-section">
+      <h3>Search By</h3>
+
+      <label>From Date:</label>
+      <select id="date-from" onchange="searchRecords()">
+        <option value="All">All</option>
+      </select>
+
+      <label>To Date:</label>
+      <select id="date-to" onchange="searchRecords()">
+        <option value="All">All</option>
+      </select>
+
+      <label>Category:</label>
+      <select id="category-list" multiple onchange="searchRecords()"></select>
+    </div>
+
+    <button class="btn btn-blue" onclick="resetAll()">Reset</button>
+    <button class="btn btn-green" onclick="document.getElementById('excel-input').click()">Import Excel</button>
+    <button class="btn btn-red" onclick="deleteRecord()">Delete Record</button>
+    <input type="file" id="excel-input" accept=".xlsx,.xls" onchange="importExcel(this)" />
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Account</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const COLORS = ["#3498db","#e67e22","#2ecc71","#9b59b6","#1abc9c","#e74c3c","#f1c40f","#34495e","#16a085","#c0392b"];
+  let selectedRow = null;
+  let allRows = [];
+
+  // ---------------------------
+  // INIT
+  // ---------------------------
+  async function init() {
+    await loadFilters();
+    await loadRecords();
+  }
+
+  // ---------------------------
+  // LOAD FILTERS
+  // ---------------------------
+  async function loadFilters() {
+    const res = await fetch("/api/filters");
+    const data = await res.json();
+
+    const dateFrom = document.getElementById("date-from");
+    const dateTo   = document.getElementById("date-to");
+    const catList  = document.getElementById("category-list");
+
+    // Dates
+    [dateFrom, dateTo].forEach(sel => {
+      sel.innerHTML = '<option value="All">All</option>';
+      data.dates.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d; opt.textContent = d;
+        sel.appendChild(opt);
+      });
+    });
+
+    // Categories
+    catList.innerHTML = "";
+    data.categories.forEach((cat, idx) => {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.textContent = `${idx + 1}. ${cat}`;
+      catList.appendChild(opt);
+    });
+  }
+
+  // ---------------------------
+  // LOAD RECORDS (no filter)
+  // ---------------------------
+  async function loadRecords() {
+    const res = await fetch("/api/records");
+    allRows = await res.json();
+    renderTable(allRows);
+    updateTotal(allRows);
+    updateCards(allRows);
+  }
+
+  // ---------------------------
+  // SEARCH RECORDS
+  // ---------------------------
+  async function searchRecords() {
+    const dateFrom   = document.getElementById("date-from").value;
+    const dateTo     = document.getElementById("date-to").value;
+    const catOptions = document.getElementById("category-list").selectedOptions;
+    const categories = Array.from(catOptions).map(o => o.value);
+
+    const params = new URLSearchParams();
+    params.set("date_from", dateFrom);
+    params.set("date_to", dateTo);
+    categories.forEach(c => params.append("categories", c));
+
+    const res = await fetch("/api/records?" + params.toString());
+    const rows = await res.json();
+    allRows = rows;
+    renderTable(rows);
+    updateTotal(rows);
+    updateCards(rows);
+  }
+
+  // ---------------------------
+  // RENDER TABLE
+  // ---------------------------
+  function renderTable(rows) {
+    const tbody = document.getElementById("table-body");
+    tbody.innerHTML = "";
+    selectedRow = null;
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No records found</td></tr>';
+      return;
+    }
+
+    rows.forEach((row, idx) => {
+      const tr = document.createElement("tr");
+      tr.dataset.idx = idx;
+      ["time","type","amount","category","account","note"].forEach(key => {
+        const td = document.createElement("td");
+        td.textContent = key === "amount" ? parseFloat(row[key]).toFixed(2) : (row[key] ?? "");
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", () => {
+        if (selectedRow) selectedRow.classList.remove("selected");
+        tr.classList.add("selected");
+        selectedRow = tr;
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------------------------
+  // UPDATE TOTAL
+  // ---------------------------
+  function updateTotal(rows) {
+    const total = rows.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+    document.getElementById("total-amount").textContent = total.toFixed(2);
+  }
+
+  // ---------------------------
+  // UPDATE CARDS
+  // ---------------------------
+  function updateCards(rows) {
+    const totals = {};
+    rows.forEach(r => {
+      totals[r.category] = (totals[r.category] || 0) + parseFloat(r.amount || 0);
+    });
+
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 25);
+    const grid = document.getElementById("cards-grid");
+    grid.innerHTML = "";
+
+    sorted.forEach(([cat, amt], idx) => {
+      const card = document.createElement("div");
+      card.className = "cat-card";
+      card.style.background = COLORS[idx % COLORS.length];
+      card.innerHTML = `<span>${cat}</span><span>:</span><span>${amt.toFixed(2)}</span>`;
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------------------------
+  // RESET
+  // ---------------------------
+  async function resetAll() {
+    document.getElementById("date-from").value = "All";
+    document.getElementById("date-to").value   = "All";
+    const catList = document.getElementById("category-list");
+    Array.from(catList.options).forEach(o => o.selected = false);
+    await loadRecords();
+  }
+
+  // ---------------------------
+  // DELETE RECORD
+  // ---------------------------
+  async function deleteRecord() {
+    if (!selectedRow) {
+      showToast("No record selected.", "error");
+      return;
+    }
+
+    const idx = parseInt(selectedRow.dataset.idx);
+    const row = allRows[idx];
+
+    const res = await fetch("/api/record", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(row)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast("Record deleted successfully.", "success");
+      await loadFilters();
+      await searchRecords();
+    } else {
+      showToast("Failed to delete: " + (data.error || "Unknown error"), "error");
+    }
+  }
+
+  // ---------------------------
+  // IMPORT EXCEL
+  // ---------------------------
+  async function importExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/import", { method: "POST", body: formData });
+    const data = await res.json();
+    input.value = "";
+
+    if (data.success) {
+      showToast(`Imported ${data.imported} records successfully!`, "success");
+      await loadFilters();
+      await loadRecords();
+    } else {
+      showToast("Import failed: " + (data.error || "Unknown error"), "error");
+    }
+  }
+
+  // ---------------------------
+  // TOAST NOTIFICATION
+  // ---------------------------
+  function showToast(msg, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.className = type;
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 3000);
+  }
+
+  init();
+</script>
+</body>
+</html>
